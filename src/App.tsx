@@ -48,8 +48,14 @@ function App() {
         category: expense.category,
         description: expense.description,
         date: expense.date,
-        receiptPhoto: (expense as any).receipt_photo || [],
-        foodPhoto: (expense as any).food_photo || [],
+        receiptPhoto:
+          typeof (expense as any).receipt_photo === "string"
+            ? (expense as any).receipt_photo.split(",")
+            : [],
+        foodPhoto:
+          typeof (expense as any).food_photo === "string"
+            ? (expense as any).food_photo.split(",")
+            : [],
       }));
 
       setExpenses(localExpenses);
