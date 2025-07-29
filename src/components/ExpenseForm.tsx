@@ -3,48 +3,64 @@ import { Expense } from "../types/Expense";
 import "./ExpenseForm.css";
 
 interface ExpenseFormProps {
-  onAddExpense: (expense: Omit<Expense, "id" | "date">) => void;
+  onAddExpense: (expense: Omit<Expense, "id">) => void;
 }
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
-  const [receiptPhoto, setReceiptPhoto] = useState<string | null>(null);
-  const [foodPhoto, setFoodPhoto] = useState<string | null>(null);
+  const [date, setDate] = useState<string>(
+    new Date().toISOString().slice(0, 10)
+  );
+  const [receiptPhoto, setReceiptPhoto] = useState<string[]>([]);
+  const [foodPhoto, setFoodPhoto] = useState<string[]>([]);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setImage: (image: string) => void
+    setImages: (images: string[]) => void
   ) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const readers: Promise<string>[] = [];
+      for (let i = 0; i < files.length; i++) {
+        readers.push(
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              resolve(reader.result as string);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(files[i]);
+          })
+        );
+      }
+      Promise.all(readers).then((images) => {
+        setImages(images);
+      });
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !category || !description) return;
+    if (!amount || !category || !description || !date) return;
 
     onAddExpense({
       amount: parseFloat(amount),
       category,
       description,
-      receiptPhoto: receiptPhoto || undefined,
-      foodPhoto: foodPhoto || undefined,
+      date,
+      receiptPhoto: receiptPhoto.length > 0 ? receiptPhoto : undefined,
+      foodPhoto: foodPhoto.length > 0 ? foodPhoto : undefined,
     });
 
     // Reset form
     setAmount("");
     setCategory("");
     setDescription("");
-    setReceiptPhoto(null);
-    setFoodPhoto(null);
+    setDate(new Date().toISOString().slice(0, 10));
+    setReceiptPhoto([]);
+    setFoodPhoto([]);
   };
 
   return (
@@ -97,15 +113,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
         <input
           type="file"
           accept="image/*"
+          multiple
           onChange={(e) => handleImageUpload(e, setReceiptPhoto)}
         />
-        {receiptPhoto && (
-          <img
-            src={receiptPhoto}
-            alt="Receipt preview"
-            className="preview-image"
-          />
-        )}
+        {receiptPhoto.length > 0 &&
+          receiptPhoto.map((photo, index) => (
+            <img
+              key={`receipt-preview-${index}`}
+              src={photo}
+              alt={`Receipt preview ${index + 1}`}
+              className="preview-image"
+            />
+          ))}
       </div>
 
       <div className="form-group">
@@ -113,11 +132,28 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
         <input
           type="file"
           accept="image/*"
+          multiple
           onChange={(e) => handleImageUpload(e, setFoodPhoto)}
         />
-        {foodPhoto && (
-          <img src={foodPhoto} alt="Food preview" className="preview-image" />
-        )}
+        {foodPhoto.length > 0 &&
+          foodPhoto.map((photo, index) => (
+            <img
+              key={`food-preview-${index}`}
+              src={photo}
+              alt={`Food preview ${index + 1}`}
+              className="preview-image"
+            />
+          ))}
+      </div>
+
+      <div className="form-group">
+        <label>Date</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          required
+        />
       </div>
 
       <button type="submit" className="btn btn-primary">

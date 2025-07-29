@@ -4,8 +4,8 @@ export interface Expense {
   category: string;
   description: string;
   date: string;
-  receiptPhoto?: string;
-  foodPhoto?: string;
+  receiptPhoto?: string[];
+  foodPhoto?: string[];
 }
 
 export interface Budget {

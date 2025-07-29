@@ -59,22 +59,25 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
                 <h4>{expense.description}</h4>
                 <p className="expense-date">{formatDate(expense.date)}</p>
 
-                {(expense.receiptPhoto || expense.foodPhoto) && (
+                {(expense.receiptPhoto?.length ||
+                  expense.foodPhoto?.length) && (
                   <div className="expense-photos">
-                    {expense.receiptPhoto && (
+                    {expense.receiptPhoto?.map((photo, index) => (
                       <img
-                        src={expense.receiptPhoto}
-                        alt="Receipt"
+                        key={`receipt-${index}`}
+                        src={photo}
+                        alt={`Receipt ${index + 1}`}
                         className="expense-photo"
                       />
-                    )}
-                    {expense.foodPhoto && (
+                    ))}
+                    {expense.foodPhoto?.map((photo, index) => (
                       <img
-                        src={expense.foodPhoto}
-                        alt="Food"
+                        key={`food-${index}`}
+                        src={photo}
+                        alt={`Food ${index + 1}`}
                         className="expense-photo"
                       />
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
