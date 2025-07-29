@@ -20,7 +20,7 @@ export const exportToCSV = (expenses: Expense[]) => {
     ...expenses.map((expense) =>
       [
         new Date(expense.date).toLocaleDateString(),
-        expense.amount.toFixed(2),
+        Number(expense.amount).toFixed(2),
         expense.category,
         `"${expense.description.replace(/"/g, '""')}"`,
         expense.receiptPhoto ? "Yes" : "No",
