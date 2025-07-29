@@ -1,0 +1,126 @@
+import { DeviceSyncManager } from "./deviceSync";
+
+export interface CloudExpense {
+  id: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+  userId: string;
+  deviceId: string;
+}
+
+export class CloudSyncManager {
+  private static readonly API_URL = "/.netlify/functions/expenses";
+
+  static async fetchExpenses(): Promise<CloudExpense[]> {
+    try {
+      const userId = DeviceSyncManager.getUserId();
+      const response = await fetch(`${this.API_URL}?userId=${userId}`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch expenses");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      return [];
+    }
+  }
+
+  static async saveExpense(
+    expense: Omit<CloudExpense, "userId" | "deviceId">
+  ): Promise<CloudExpense> {
+    const userId = DeviceSyncManager.getUserId();
+    const deviceId = DeviceSyncManager.getDeviceId();
+
+    const cloudExpense: CloudExpense = {
+      ...expense,
+      userId,
+      deviceId,
+    };
+
+    try {
+      const response = await fetch(this.API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cloudExpense),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save expense");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error saving expense:", error);
+      throw error;
+    }
+  }
+
+  static async updateExpense(expense: CloudExpense): Promise<CloudExpense> {
+    try {
+      const response = await fetch(this.API_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(expense),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update expense");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error updating expense:", error);
+      throw error;
+    }
+  }
+
+  static async deleteExpense(id: string): Promise<void> {
+    try {
+      const response = await fetch(this.API_URL, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete expense");
+      }
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      throw error;
+    }
+  }
+
+  static async syncAllExpenses(): Promise<void> {
+    try {
+      // Fetch cloud expenses
+      const cloudExpenses = await this.fetchExpenses();
+
+      // Sync with local storage
+      await DeviceSyncManager.syncWithCloud(cloudExpenses);
+
+      // Get merged expenses
+      const mergedExpenses = DeviceSyncManager.getLocalExpenses();
+
+      // Update cloud with merged data
+      for (const expense of mergedExpenses) {
+        if (!cloudExpenses.find((e) => e.id === expense.id)) {
+          await this.saveExpense(expense);
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing expenses:", error);
+    }
+  }
+}

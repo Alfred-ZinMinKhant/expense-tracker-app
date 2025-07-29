@@ -19,11 +19,20 @@ exports.handler = async (event, context) => {
   try {
     switch (event.httpMethod) {
       case "GET": {
-        const expenses = (await blobs.get("expenses")) || [];
+        const userId = event.queryStringParameters?.userId;
+        let allExpenses = (await blobs.get("expenses")) || [];
+
+        // Filter by userId if provided
+        if (userId) {
+          allExpenses = allExpenses.filter(
+            (expense) => expense.userId === userId
+          );
+        }
+
         return {
           statusCode: 200,
           headers,
-          body: JSON.stringify(expenses),
+          body: JSON.stringify(allExpenses),
         };
       }
       case "POST": {

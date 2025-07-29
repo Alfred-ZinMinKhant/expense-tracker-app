@@ -1,44 +1,109 @@
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useAuth0 } from "@auth0/auth0-react";
 import { Expense, Budget } from "./types/Expense";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
-import LoginButton from "./components/LoginButton";
-import LogoutButton from "./components/LogoutButton";
-import Profile from "./components/Profile";
+import SyncManager from "./components/SyncManager";
 import { exportToCSV } from "./utils/csvExport";
+import { DeviceSyncManager } from "./utils/deviceSync";
+import { CloudSyncManager } from "./utils/cloudSync";
 import "./App.css";
 
 function App() {
-  const { user, isAuthenticated, isLoading } = useAuth0();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState<Budget>({ total: 0, remaining: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load expenses from localStorage on app start
+  // Initialize device and load data
   useEffect(() => {
-    const savedExpenses = localStorage.getItem("expenses");
-    const savedBudget = localStorage.getItem("budget");
+    const initializeApp = async () => {
+      // Initialize device sync
+      DeviceSyncManager.initializeDevice();
 
-    if (savedExpenses) {
-      setExpenses(JSON.parse(savedExpenses));
-    }
+      // Load from cloud
+      await loadCloudData();
+      setIsLoading(false);
+    };
 
-    if (savedBudget) {
-      setBudget(JSON.parse(savedBudget));
-    } else {
-      setShowBudgetModal(true);
-    }
+    initializeApp();
   }, []);
 
-  // Save expenses to localStorage whenever they change
+  const loadCloudData = async () => {
+    try {
+      await CloudSyncManager.syncAllExpenses();
+      const cloudExpenses = await CloudSyncManager.fetchExpenses();
+
+      // Convert cloud expenses to local format
+      const localExpenses = cloudExpenses.map((expense) => ({
+        id: expense.id,
+        amount: expense.amount,
+        category: expense.category,
+        description: expense.description,
+        date: expense.date,
+      }));
+
+      setExpenses(localExpenses);
+
+      // Load budget from localStorage
+      const savedBudget = localStorage.getItem("budget");
+      if (savedBudget) {
+        setBudget(JSON.parse(savedBudget));
+      } else {
+        setShowBudgetModal(true);
+      }
+    } catch (error) {
+      console.error("Error loading cloud data:", error);
+      // Fallback to localStorage
+      const savedExpenses = localStorage.getItem("expenses");
+      const savedBudget = localStorage.getItem("budget");
+
+      if (savedExpenses) {
+        setExpenses(JSON.parse(savedExpenses));
+      }
+
+      if (savedBudget) {
+        setBudget(JSON.parse(savedBudget));
+      } else {
+        setShowBudgetModal(true);
+      }
+    }
+  };
+
+  // Save to both localStorage and cloud
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
     updateRemainingBudget();
+
+    // Sync to cloud
+    const syncToCloud = async () => {
+      try {
+        const userId = DeviceSyncManager.getUserId();
+        const deviceId = DeviceSyncManager.getDeviceId();
+
+        // Delete all existing cloud expenses for this user
+        const cloudExpenses = await CloudSyncManager.fetchExpenses();
+        for (const expense of cloudExpenses) {
+          await CloudSyncManager.deleteExpense(expense.id);
+        }
+
+        // Save all current expenses to cloud
+        for (const expense of expenses) {
+          await CloudSyncManager.saveExpense(expense);
+        }
+
+        DeviceSyncManager.setLastSync(new Date().toISOString());
+      } catch (error) {
+        console.error("Error syncing to cloud:", error);
+      }
+    };
+
+    if (expenses.length > 0) {
+      syncToCloud();
+    }
   }, [expenses]);
 
-  // Save budget to localStorage whenever it changes
+  // Save budget to localStorage
   useEffect(() => {
     localStorage.setItem("budget", JSON.stringify(budget));
   }, [budget]);
@@ -69,6 +134,10 @@ function App() {
     setShowBudgetModal(false);
   };
 
+  const handleSyncComplete = () => {
+    loadCloudData();
+  };
+
   const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
@@ -95,10 +164,6 @@ function App() {
           >
             Export CSV
           </button>
-          <div className="auth-section">
-            <Profile />
-            <LogoutButton />
-          </div>
         </div>
       </header>
 
@@ -107,27 +172,25 @@ function App() {
           <div className="form-section">
             {isLoading ? (
               <p>Loading...</p>
-            ) : isAuthenticated ? (
-              <ExpenseForm onAddExpense={handleAddExpense} />
             ) : (
-              <p>Please log in to manage your expenses.</p>
+              <ExpenseForm onAddExpense={handleAddExpense} />
             )}
           </div>
 
           <div className="list-section">
             {isLoading ? (
               <p>Loading...</p>
-            ) : isAuthenticated ? (
+            ) : (
               <ExpenseList
                 expenses={expenses}
                 onDeleteExpense={handleDeleteExpense}
               />
-            ) : (
-              <p>Please log in to view your expenses.</p>
             )}
           </div>
         </div>
       </main>
+
+      <SyncManager onSyncComplete={handleSyncComplete} />
 
       {showBudgetModal && (
         <div className="modal-overlay">
@@ -162,12 +225,6 @@ function App() {
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {!isLoading && !isAuthenticated && (
-        <div className="login-section">
-          <LoginButton />
         </div>
       )}
     </div>
