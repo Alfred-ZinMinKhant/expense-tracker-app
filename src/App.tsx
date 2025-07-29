@@ -6,7 +6,7 @@ import ExpenseList from "./components/ExpenseList";
 import SyncManager from "./components/SyncManager";
 import { exportToCSV } from "./utils/csvExport";
 import { DeviceSyncManager } from "./utils/deviceSync";
-import { CloudSyncManager } from "./utils/cloudSync";
+import { CloudSyncManager } from "./utils/cloudSync-neon";
 import "./App.css";
 
 function App() {

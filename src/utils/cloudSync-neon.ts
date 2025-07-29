@@ -8,6 +8,8 @@ export interface CloudExpense {
   date: string;
   receipt_photo?: string;
   food_photo?: string;
+  user_id?: string;
+  device_id?: string;
 }
 
 export class CloudSyncManager {
