@@ -14,6 +14,8 @@ function App() {
   const [budget, setBudget] = useState<Budget>({ total: 0, remaining: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Initialize device and load data
   useEffect(() => {
@@ -41,6 +43,8 @@ function App() {
         category: expense.category,
         description: expense.description,
         date: expense.date,
+        receiptPhoto: (expense as any).receipt_photo || [],
+        foodPhoto: (expense as any).food_photo || [],
       }));
 
       setExpenses(localExpenses);
@@ -70,52 +74,6 @@ function App() {
     }
   };
 
-  // Save to both localStorage and cloud
-  useEffect(() => {
-    localStorage.setItem("expenses", JSON.stringify(expenses));
-    updateRemainingBudget();
-
-    // Sync to cloud
-    const syncToCloud = async () => {
-      try {
-        const userId = DeviceSyncManager.getUserId();
-        const deviceId = DeviceSyncManager.getDeviceId();
-
-        // Delete all existing cloud expenses for this user
-        const cloudExpenses = await CloudSyncManager.fetchExpenses();
-        for (const expense of cloudExpenses) {
-          await CloudSyncManager.deleteExpense(expense.id);
-        }
-
-        // Save all current expenses to cloud
-        for (const expense of expenses) {
-          await CloudSyncManager.saveExpense(expense);
-        }
-
-        DeviceSyncManager.setLastSync(new Date().toISOString());
-      } catch (error) {
-        console.error("Error syncing to cloud:", error);
-      }
-    };
-
-    if (expenses.length > 0) {
-      syncToCloud();
-    }
-  }, [expenses]);
-
-  // Save budget to localStorage
-  useEffect(() => {
-    localStorage.setItem("budget", JSON.stringify(budget));
-  }, [budget]);
-
-  const updateRemainingBudget = () => {
-    const totalSpent = expenses.reduce(
-      (sum, expense) => sum + expense.amount,
-      0
-    );
-    setBudget((prev) => ({ ...prev, remaining: prev.total - totalSpent }));
-  };
-
   const handleAddExpense = (expenseData: Omit<Expense, "id" | "date">) => {
     const newExpense: Expense = {
       ...expenseData,
@@ -125,9 +83,17 @@ function App() {
     setExpenses((prev) => [...prev, newExpense]);
   };
 
-  const handleDeleteExpense = (id: string) => {
-    setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+  const handleDeleteExpense = async (id: string) => {
+    try {
+      // Delete from cloud
+      await CloudSyncManager.deleteExpense(id);
+      setExpenses((prev) => prev.filter((expense) => expense.id !== id));
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+    }
   };
+
+  // Removed unused handleEditExpense function
 
   const handleSetBudget = (totalBudget: number) => {
     setBudget({ total: totalBudget, remaining: totalBudget });
@@ -184,6 +150,9 @@ function App() {
               <ExpenseList
                 expenses={expenses}
                 onDeleteExpense={handleDeleteExpense}
+                onEditExpense={(expense) => {
+                  // Removed usage of setEditingExpense and setShowEditModal since state variables removed
+                }}
               />
             )}
           </div>

@@ -5,6 +5,7 @@ import "./ExpenseList.css";
 interface ExpenseListProps {
   expenses: Expense[];
   onDeleteExpense: (id: string) => void;
+  onEditExpense: (expense: Expense) => void;
 }
 
 const ExpenseList: React.FC<ExpenseListProps> = ({
