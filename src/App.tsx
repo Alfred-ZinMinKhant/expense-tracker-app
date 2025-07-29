@@ -79,13 +79,33 @@ function App() {
     }
   };
 
-  const handleAddExpense = (expenseData: Omit<Expense, "id" | "date">) => {
-    const newExpense: Expense = {
+  const handleAddExpense = async (
+    expenseData: Omit<Expense, "id" | "date">
+  ) => {
+    const newExpense: Omit<Expense, "id"> = {
       ...expenseData,
-      id: uuidv4(),
       date: new Date().toISOString(),
     };
-    setExpenses((prev) => [...prev, newExpense]);
+    try {
+      const savedExpense = await CloudSyncManager.saveExpense(newExpense);
+      // Convert savedExpense to local Expense format
+      const localExpense: Expense = {
+        id: savedExpense.id,
+        amount: savedExpense.amount,
+        category: savedExpense.category,
+        description: savedExpense.description,
+        date: savedExpense.date,
+        receiptPhoto: savedExpense.receipt_photo
+          ? savedExpense.receipt_photo.split(",")
+          : [],
+        foodPhoto: savedExpense.food_photo
+          ? savedExpense.food_photo.split(",")
+          : [],
+      };
+      setExpenses((prev) => [...prev, localExpense]);
+    } catch (error) {
+      console.error("Error saving expense:", error);
+    }
   };
 
   const handleDeleteExpense = async (id: string) => {

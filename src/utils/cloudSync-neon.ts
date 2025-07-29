@@ -110,7 +110,8 @@ export class CloudSyncManager {
 
   static async syncAllExpenses(): Promise<void> {
     try {
-      await this.fetchExpenses();
+      const cloudExpenses = await this.fetchExpenses();
+      await DeviceSyncManager.syncWithCloud(cloudExpenses);
     } catch (error) {
       console.error("Error syncing expenses:", error);
     }
