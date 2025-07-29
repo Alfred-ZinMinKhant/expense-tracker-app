@@ -12,6 +12,11 @@ export interface CloudExpense {
   device_id?: string;
 }
 
+export type SaveCloudExpense = Omit<
+  CloudExpense,
+  "id" | "user_id" | "device_id"
+>;
+
 export class CloudSyncManager {
   private static readonly API_URL = "/.netlify/functions/expenses-neon";
 
@@ -36,9 +41,7 @@ export class CloudSyncManager {
     }
   }
 
-  static async saveExpense(
-    expense: Omit<CloudExpense, "userId" | "deviceId">
-  ): Promise<CloudExpense> {
+  static async saveExpense(expense: SaveCloudExpense): Promise<CloudExpense> {
     const cloudExpense = {
       amount: expense.amount,
       category: expense.category,

@@ -6,7 +6,7 @@ import ExpenseList from "./components/ExpenseList";
 import SyncManager from "./components/SyncManager";
 import { exportToCSV } from "./utils/csvExport";
 import { DeviceSyncManager } from "./utils/deviceSync";
-import { CloudSyncManager } from "./utils/cloudSync-neon";
+import { CloudSyncManager, SaveCloudExpense } from "./utils/cloudSync-neon";
 import "./App.css";
 
 function App() {
@@ -82,9 +82,15 @@ function App() {
   const handleAddExpense = async (
     expenseData: Omit<Expense, "id" | "date">
   ) => {
-    const newExpense: Omit<Expense, "id"> = {
-      ...expenseData,
+    const newExpense: SaveCloudExpense = {
+      amount: expenseData.amount,
+      category: expenseData.category,
+      description: expenseData.description,
       date: new Date().toISOString(),
+      receipt_photo: expenseData.receiptPhoto
+        ? expenseData.receiptPhoto.join(",")
+        : "",
+      food_photo: expenseData.foodPhoto ? expenseData.foodPhoto.join(",") : "",
     };
     try {
       const savedExpense = await CloudSyncManager.saveExpense(newExpense);
