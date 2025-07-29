@@ -92,11 +92,11 @@ exports.handler = async (event, context) => {
       case "POST": {
         const newExpense = JSON.parse(event.body);
         const [createdExpense] = await sql`
-          INSERT INTO expenses (amount, category, description, receipt_photo, food_photo, user_id, device_id)
+          INSERT INTO expenses (amount, category, description, date, receipt_photo, food_photo, user_id, device_id)
           VALUES (${newExpense.amount}, ${newExpense.category}, ${
           newExpense.description
-        }, ${newExpense.receiptPhoto || null}, ${
-          newExpense.foodPhoto || null
+        }, ${newExpense.date}, ${newExpense.receipt_photo || null}, ${
+          newExpense.food_photo || null
         }, ${newExpense.userId || null}, ${newExpense.deviceId || null})
           RETURNING id, amount, category, description, date, receipt_photo, food_photo, user_id, device_id
         `;
@@ -114,8 +114,8 @@ exports.handler = async (event, context) => {
           SET amount = ${updatedExpense.amount},
               category = ${updatedExpense.category},
               description = ${updatedExpense.description},
-              receipt_photo = ${updatedExpense.receiptPhoto || null},
-              food_photo = ${updatedExpense.foodPhoto || null},
+              receipt_photo = ${updatedExpense.receipt_photo || null},
+              food_photo = ${updatedExpense.food_photo || null},
               user_id = ${updatedExpense.userId || null},
               device_id = ${updatedExpense.deviceId || null},
               updated_at = NOW()
