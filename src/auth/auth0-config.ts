@@ -1,7 +1,9 @@
 export const auth0Config = {
-  domain: process.env.AUTH0_DOMAIN || "",
-  clientId: process.env.AUTH0_CLIENT_ID || "",
-  audience: process.env.AUTH0_AUDIENCE || "",
+  domain: process.env.REACT_APP_AUTH0_DOMAIN || process.env.AUTH0_DOMAIN || "",
+  clientId:
+    process.env.REACT_APP_AUTH0_CLIENT_ID || process.env.AUTH0_CLIENT_ID || "",
+  audience:
+    process.env.REACT_APP_AUTH0_AUDIENCE || process.env.AUTH0_AUDIENCE || "",
   redirectUri: window.location.origin,
   cacheLocation: "localstorage" as const,
 };
