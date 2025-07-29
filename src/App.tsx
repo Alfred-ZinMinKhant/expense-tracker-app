@@ -1,29 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Expense, Budget } from "./types/Expense";
 import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
+import LoginButton from "./components/LoginButton";
+import LogoutButton from "./components/LogoutButton";
+import Profile from "./components/Profile";
 import { exportToCSV } from "./utils/csvExport";
 import "./App.css";
-import netlifyIdentity from "netlify-identity-widget";
 
 function App() {
-  const [user, setUser] = useState<any | null>(null);
+  const { user, isAuthenticated, isLoading } = useAuth0();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState<Budget>({ total: 0, remaining: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
-
-  useEffect(() => {
-    netlifyIdentity.init();
-    netlifyIdentity.on("login", (user: any) => {
-      setUser(user);
-      netlifyIdentity.close();
-    });
-    netlifyIdentity.on("logout", () => {
-      setUser(null);
-    });
-    setUser(netlifyIdentity.currentUser());
-  }, []);
 
   // Load expenses from localStorage on app start
   useEffect(() => {
@@ -104,13 +95,19 @@ function App() {
           >
             Export CSV
           </button>
+          <div className="auth-section">
+            <Profile />
+            <LogoutButton />
+          </div>
         </div>
       </header>
 
       <main className="app-main">
         <div className="content-grid">
           <div className="form-section">
-            {user ? (
+            {isLoading ? (
+              <p>Loading...</p>
+            ) : isAuthenticated ? (
               <ExpenseForm onAddExpense={handleAddExpense} />
             ) : (
               <p>Please log in to manage your expenses.</p>
@@ -118,7 +115,9 @@ function App() {
           </div>
 
           <div className="list-section">
-            {user ? (
+            {isLoading ? (
+              <p>Loading...</p>
+            ) : isAuthenticated ? (
               <ExpenseList
                 expenses={expenses}
                 onDeleteExpense={handleDeleteExpense}
@@ -166,14 +165,9 @@ function App() {
         </div>
       )}
 
-      {!user && (
+      {!isLoading && !isAuthenticated && (
         <div className="login-section">
-          <button
-            className="btn btn-primary"
-            onClick={() => netlifyIdentity.open()}
-          >
-            Login / Signup
-          </button>
+          <LoginButton />
         </div>
       )}
     </div>

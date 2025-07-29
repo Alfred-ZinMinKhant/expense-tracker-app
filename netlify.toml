@@ -7,8 +7,16 @@
   to = "/index.html"
   status = 200
 
+[[redirects]]
+  from = "/.netlify/identity/*"
+  to = "/.netlify/identity/:splat"
+  status = 200
+
 [build.environment]
   NETLIFY_DATABASE_URL = "psql 'postgresql://neondb_owner:npg_L0URB4MSzWFk@ep-weathered-cake-ae5xmnsu-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'"
 
 [functions]
   directory = "netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-identity"
