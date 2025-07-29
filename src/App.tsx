@@ -148,9 +148,9 @@ function App() {
         </h1>
         <div className="budget-info">
           <div className="budget-display">
-            <span>Budget: ฿{budget.total.toFixed(2)}</span>
-            <span>Spent: ฿{totalSpent.toFixed(2)}</span>
-            <span>Remaining: ฿{budget.remaining.toFixed(2)}</span>
+            <span>Budget: ฿{Number(budget.total || 0).toFixed(2)}</span>
+            <span>Spent: ฿{Number(totalSpent || 0).toFixed(2)}</span>
+            <span>Remaining: ฿{Number(budget.remaining || 0).toFixed(2)}</span>
           </div>
           <button
             className="btn btn-secondary"
