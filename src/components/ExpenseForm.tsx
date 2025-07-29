@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Expense } from "../types/Expense";
 import "./ExpenseForm.css";
 
 interface ExpenseFormProps {
-  onAddExpense: (expense: Omit<Expense, "id">) => void;
+  onAddExpense: (expense: Omit<Expense, "id" | "date">) => void;
+  editingExpense?: Expense | null;
+  onUpdateExpense?: (expense: Omit<Expense, "id" | "date">) => void;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({
+  onAddExpense,
+  editingExpense,
+  onUpdateExpense,
+}) => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -15,6 +21,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
   );
   const [receiptPhoto, setReceiptPhoto] = useState<string[]>([]);
   const [foodPhoto, setFoodPhoto] = useState<string[]>([]);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editingExpense) {
+      setAmount(editingExpense.amount.toString());
+      setCategory(editingExpense.category);
+      setDescription(editingExpense.description);
+      setDate(editingExpense.date.slice(0, 10)); // Convert ISO string to date input format
+      setReceiptPhoto(editingExpense.receiptPhoto || []);
+      setFoodPhoto(editingExpense.foodPhoto || []);
+    }
+  }, [editingExpense]);
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -43,29 +61,36 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !category || !description || !date) return;
+    if (!amount || !category || !description) return;
 
-    onAddExpense({
+    const expenseData = {
       amount: parseFloat(amount),
       category,
       description,
-      date,
       receiptPhoto: receiptPhoto.length > 0 ? receiptPhoto : undefined,
       foodPhoto: foodPhoto.length > 0 ? foodPhoto : undefined,
-    });
+    };
 
-    // Reset form
-    setAmount("");
-    setCategory("");
-    setDescription("");
-    setDate(new Date().toISOString().slice(0, 10));
-    setReceiptPhoto([]);
-    setFoodPhoto([]);
+    if (editingExpense && onUpdateExpense) {
+      onUpdateExpense(expenseData);
+    } else {
+      onAddExpense(expenseData);
+    }
+
+    // Reset form only if not editing
+    if (!editingExpense) {
+      setAmount("");
+      setCategory("");
+      setDescription("");
+      setDate(new Date().toISOString().slice(0, 10));
+      setReceiptPhoto([]);
+      setFoodPhoto([]);
+    }
   };
 
   return (
     <form className="expense-form" onSubmit={handleSubmit}>
-      <h3>Add New Expense</h3>
+      <h3>{editingExpense ? "Edit Expense" : "Add New Expense"}</h3>
 
       <div className="form-group">
         <label>Amount (฿)</label>
@@ -157,7 +182,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onAddExpense }) => {
       </div>
 
       <button type="submit" className="btn btn-primary">
-        Add Expense
+        {editingExpense ? "Update Expense" : "Add Expense"}
       </button>
     </form>
   );

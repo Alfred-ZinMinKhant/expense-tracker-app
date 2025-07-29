@@ -10,5 +10,4 @@ export interface Expense {
 
 export interface Budget {
   total: number;
-  remaining: number;
 }

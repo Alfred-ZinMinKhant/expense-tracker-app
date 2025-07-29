@@ -11,7 +11,7 @@ import "./App.css";
 
 function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [budget, setBudget] = useState<Budget>({ total: 0, remaining: 0 });
+  const [budget, setBudget] = useState<Budget>({ total: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -30,6 +30,11 @@ function App() {
 
     initializeApp();
   }, []);
+
+  // Save budget to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("budget", JSON.stringify(budget));
+  }, [budget]);
 
   const loadCloudData = async () => {
     try {
@@ -93,10 +98,52 @@ function App() {
     }
   };
 
-  // Removed unused handleEditExpense function
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateExpense = async (
+    updatedExpense: Omit<Expense, "id" | "date">
+  ) => {
+    if (!editingExpense) return;
+
+    const expenseToUpdate: Expense = {
+      ...editingExpense,
+      ...updatedExpense,
+    };
+
+    try {
+      // Convert to cloud format for update
+      const cloudExpense = {
+        id: expenseToUpdate.id,
+        amount: expenseToUpdate.amount,
+        category: expenseToUpdate.category,
+        description: expenseToUpdate.description,
+        date: expenseToUpdate.date,
+        receipt_photo: expenseToUpdate.receiptPhoto?.join(",") || "",
+        food_photo: expenseToUpdate.foodPhoto?.join(",") || "",
+      };
+
+      // Update in cloud
+      await CloudSyncManager.updateExpense(cloudExpense);
+
+      // Update local state
+      setExpenses((prev) =>
+        prev.map((expense) =>
+          expense.id === editingExpense.id ? expenseToUpdate : expense
+        )
+      );
+
+      setEditingExpense(null);
+      setShowEditModal(false);
+    } catch (error) {
+      console.error("Error updating expense:", error);
+    }
+  };
 
   const handleSetBudget = (totalBudget: number) => {
-    setBudget({ total: totalBudget, remaining: totalBudget });
+    setBudget({ total: totalBudget });
     setShowBudgetModal(false);
   };
 
@@ -105,6 +152,7 @@ function App() {
   };
 
   const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const remainingBudget = budget.total - totalSpent;
 
   return (
     <div className="App">
@@ -116,7 +164,7 @@ function App() {
           <div className="budget-display">
             <span>Budget: ฿{Number(budget.total || 0).toFixed(2)}</span>
             <span>Spent: ฿{Number(totalSpent || 0).toFixed(2)}</span>
-            <span>Remaining: ฿{Number(budget.remaining || 0).toFixed(2)}</span>
+            <span>Remaining: ฿{Number(remainingBudget || 0).toFixed(2)}</span>
           </div>
           <button
             className="btn btn-secondary"
@@ -139,7 +187,11 @@ function App() {
             {isLoading ? (
               <p>Loading...</p>
             ) : (
-              <ExpenseForm onAddExpense={handleAddExpense} />
+              <ExpenseForm
+                onAddExpense={handleAddExpense}
+                editingExpense={editingExpense}
+                onUpdateExpense={handleUpdateExpense}
+              />
             )}
           </div>
 
@@ -150,9 +202,7 @@ function App() {
               <ExpenseList
                 expenses={expenses}
                 onDeleteExpense={handleDeleteExpense}
-                onEditExpense={(expense) => {
-                  // Removed usage of setEditingExpense and setShowEditModal since state variables removed
-                }}
+                onEditExpense={handleEditExpense}
               />
             )}
           </div>
@@ -193,6 +243,31 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingExpense && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Edit Expense</h3>
+            <ExpenseForm
+              onAddExpense={handleUpdateExpense}
+              editingExpense={editingExpense}
+              onUpdateExpense={handleUpdateExpense}
+            />
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setEditingExpense(null);
+                  setShowEditModal(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

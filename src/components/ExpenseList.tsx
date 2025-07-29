@@ -11,6 +11,7 @@ interface ExpenseListProps {
 const ExpenseList: React.FC<ExpenseListProps> = ({
   expenses,
   onDeleteExpense,
+  onEditExpense,
 }) => {
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
@@ -83,12 +84,20 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
                 )}
               </div>
 
-              <button
-                className="btn btn-danger"
-                onClick={() => onDeleteExpense(expense.id)}
-              >
-                Delete
-              </button>
+              <div className="expense-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={() => onEditExpense(expense)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => onDeleteExpense(expense.id)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>
