@@ -5,11 +5,25 @@ import ExpenseForm from "./components/ExpenseForm";
 import ExpenseList from "./components/ExpenseList";
 import { exportToCSV } from "./utils/csvExport";
 import "./App.css";
+import netlifyIdentity from "netlify-identity-widget";
 
 function App() {
+  const [user, setUser] = useState<any | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState<Budget>({ total: 0, remaining: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+
+  useEffect(() => {
+    netlifyIdentity.init();
+    netlifyIdentity.on("login", (user: any) => {
+      setUser(user);
+      netlifyIdentity.close();
+    });
+    netlifyIdentity.on("logout", () => {
+      setUser(null);
+    });
+    setUser(netlifyIdentity.currentUser());
+  }, []);
 
   // Load expenses from localStorage on app start
   useEffect(() => {
@@ -96,14 +110,22 @@ function App() {
       <main className="app-main">
         <div className="content-grid">
           <div className="form-section">
-            <ExpenseForm onAddExpense={handleAddExpense} />
+            {user ? (
+              <ExpenseForm onAddExpense={handleAddExpense} />
+            ) : (
+              <p>Please log in to manage your expenses.</p>
+            )}
           </div>
 
           <div className="list-section">
-            <ExpenseList
-              expenses={expenses}
-              onDeleteExpense={handleDeleteExpense}
-            />
+            {user ? (
+              <ExpenseList
+                expenses={expenses}
+                onDeleteExpense={handleDeleteExpense}
+              />
+            ) : (
+              <p>Please log in to view your expenses.</p>
+            )}
           </div>
         </div>
       </main>
@@ -141,6 +163,17 @@ function App() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {!user && (
+        <div className="login-section">
+          <button
+            className="btn btn-primary"
+            onClick={() => netlifyIdentity.open()}
+          >
+            Login / Signup
+          </button>
         </div>
       )}
     </div>
