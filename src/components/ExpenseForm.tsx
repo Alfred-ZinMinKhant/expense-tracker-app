@@ -32,8 +32,20 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
       setAmount(editingExpense.amount.toString());
       setCategory(editingExpense.category);
       setDescription(editingExpense.description);
-      // Convert ISO string to datetime-local input format (YYYY-MM-DDTHH:mm)
-      setDate(editingExpense.date.slice(0, 16));
+      // Convert date to datetime-local input format (YYYY-MM-DDTHH:mm)
+      // Handle different date formats
+      let formattedDate = "";
+      if (editingExpense.date) {
+        try {
+          // Try to parse the date and convert to the correct format
+          const dateObj = new Date(editingExpense.date);
+          formattedDate = dateObj.toISOString().slice(0, 16);
+        } catch (error) {
+          // If parsing fails, try to use the date as is (assuming it's already in the correct format)
+          formattedDate = editingExpense.date.slice(0, 16);
+        }
+      }
+      setDate(formattedDate);
       setReceiptPhoto(editingExpense.receiptPhoto || []);
       setFoodPhoto(editingExpense.foodPhoto || []);
     }
@@ -68,8 +80,15 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     e.preventDefault();
     if (!amount || !category || !description) return;
 
+    // Validate amount
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
     const expenseData = {
-      amount: parseFloat(amount),
+      amount: amountValue,
       category,
       description,
       receiptPhoto: receiptPhoto.length > 0 ? receiptPhoto : undefined,
