@@ -52,22 +52,29 @@ function App() {
       await CloudSyncManager.syncAllExpenses();
       const cloudExpenses = await CloudSyncManager.fetchExpenses();
 
-      // Convert cloud expenses to local format
-      const localExpenses = cloudExpenses.map((expense) => ({
-        id: expense.id,
-        amount: expense.amount,
-        category: expense.category,
-        description: expense.description,
-        date: expense.date,
-        receiptPhoto:
-          typeof (expense as any).receipt_photo === "string"
-            ? (expense as any).receipt_photo.split("|")
-            : [],
-        foodPhoto:
-          typeof (expense as any).food_photo === "string"
-            ? (expense as any).food_photo.split("|")
-            : [],
-      }));
+      // Convert cloud expenses to local format and validate
+      const localExpenses = cloudExpenses
+        .map((expense) => ({
+          id: expense.id,
+          amount: expense.amount,
+          category: expense.category,
+          description: expense.description,
+          date: expense.date,
+          receiptPhoto:
+            typeof (expense as any).receipt_photo === "string"
+              ? (expense as any).receipt_photo.split("|")
+              : [],
+          foodPhoto:
+            typeof (expense as any).food_photo === "string"
+              ? (expense as any).food_photo.split("|")
+              : [],
+        }))
+        .filter(
+          (expense) =>
+            expense &&
+            typeof expense.amount === "number" &&
+            !isNaN(expense.amount)
+        );
 
       setExpenses(localExpenses);
 
@@ -87,7 +94,19 @@ function App() {
       const savedBudget = localStorage.getItem("budget");
 
       if (savedExpenses) {
-        setExpenses(JSON.parse(savedExpenses));
+        try {
+          const parsedExpenses = JSON.parse(savedExpenses);
+          // Validate expenses to ensure they have valid amounts
+          const validExpenses = parsedExpenses.filter(
+            (expense: any) =>
+              expense &&
+              typeof expense.amount === "number" &&
+              !isNaN(expense.amount)
+          );
+          setExpenses(validExpenses);
+        } catch (error) {
+          console.error("Error parsing saved expenses:", error);
+        }
       }
 
       // Only show budget modal if no budget has been set
@@ -104,6 +123,16 @@ function App() {
   const handleAddExpense = async (
     expenseData: Omit<Expense, "id" | "date">
   ) => {
+    // Validate expense data
+    if (
+      typeof expenseData.amount !== "number" ||
+      isNaN(expenseData.amount) ||
+      expenseData.amount <= 0
+    ) {
+      console.error("Invalid expense amount:", expenseData.amount);
+      return;
+    }
+
     const newExpense: SaveCloudExpense = {
       amount: expenseData.amount,
       category: expenseData.category,
@@ -154,6 +183,16 @@ function App() {
   const handleUpdateExpense = async (updatedExpense: Omit<Expense, "id">) => {
     if (!editingExpense) return;
 
+    // Validate updated expense data
+    if (
+      typeof updatedExpense.amount !== "number" ||
+      isNaN(updatedExpense.amount) ||
+      updatedExpense.amount <= 0
+    ) {
+      console.error("Invalid expense amount:", updatedExpense.amount);
+      return;
+    }
+
     const expenseToUpdate: Expense = {
       ...editingExpense,
       ...updatedExpense,
@@ -197,7 +236,10 @@ function App() {
     loadCloudData();
   };
 
-  const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalSpent = expenses.reduce((sum, expense) => {
+    const amount = Number(expense.amount);
+    return sum + (isNaN(amount) ? 0 : amount);
+  }, 0);
   const remainingBudget = budget.total - totalSpent;
 
   return (
