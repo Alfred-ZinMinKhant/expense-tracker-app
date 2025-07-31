@@ -10,8 +10,19 @@ import { CloudSyncManager, SaveCloudExpense } from "./utils/cloudSync-neon";
 import "./App.css";
 
 function App() {
+  const [budget, setBudget] = useState<Budget>(() => {
+    // Load budget from localStorage on initial load
+    const savedBudget = localStorage.getItem("budget");
+    if (savedBudget) {
+      try {
+        return JSON.parse(savedBudget);
+      } catch (error) {
+        console.error("Error parsing saved budget:", error);
+      }
+    }
+    return { total: 0 };
+  });
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [budget, setBudget] = useState<Budget>({ total: 0 });
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -60,12 +71,14 @@ function App() {
 
       setExpenses(localExpenses);
 
-      // Load budget from localStorage
-      const savedBudget = localStorage.getItem("budget");
-      if (savedBudget) {
-        setBudget(JSON.parse(savedBudget));
-      } else {
-        setShowBudgetModal(true);
+      // Only show budget modal if no budget has been set
+      if (budget.total === 0) {
+        const savedBudget = localStorage.getItem("budget");
+        if (savedBudget) {
+          setBudget(JSON.parse(savedBudget));
+        } else {
+          setShowBudgetModal(true);
+        }
       }
     } catch (error) {
       console.error("Error loading cloud data:", error);
@@ -77,10 +90,13 @@ function App() {
         setExpenses(JSON.parse(savedExpenses));
       }
 
-      if (savedBudget) {
-        setBudget(JSON.parse(savedBudget));
-      } else {
-        setShowBudgetModal(true);
+      // Only show budget modal if no budget has been set
+      if (budget.total === 0) {
+        if (savedBudget) {
+          setBudget(JSON.parse(savedBudget));
+        } else {
+          setShowBudgetModal(true);
+        }
       }
     }
   };
