@@ -17,7 +17,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 16)
   );
   const [receiptPhoto, setReceiptPhoto] = useState<string[]>([]);
   const [foodPhoto, setFoodPhoto] = useState<string[]>([]);
@@ -28,7 +28,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
       setAmount(editingExpense.amount.toString());
       setCategory(editingExpense.category);
       setDescription(editingExpense.description);
-      setDate(editingExpense.date.slice(0, 10)); // Convert ISO string to date input format
+      // Convert ISO string to datetime-local input format (YYYY-MM-DDTHH:mm)
+      setDate(editingExpense.date.slice(0, 16));
       setReceiptPhoto(editingExpense.receiptPhoto || []);
       setFoodPhoto(editingExpense.foodPhoto || []);
     }
@@ -36,7 +37,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setImages: (images: string[]) => void
+    setImages: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -54,7 +55,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
         );
       }
       Promise.all(readers).then((images) => {
-        setImages(images);
+        setImages((prevImages: string[]) => [...prevImages, ...images]);
       });
     }
   };
@@ -82,7 +83,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
       setAmount("");
       setCategory("");
       setDescription("");
-      setDate(new Date().toISOString().slice(0, 10));
+      setDate(new Date().toISOString().slice(0, 16));
       setReceiptPhoto([]);
       setFoodPhoto([]);
     }
@@ -143,12 +144,25 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
         />
         {receiptPhoto.length > 0 &&
           receiptPhoto.map((photo, index) => (
-            <img
+            <div
               key={`receipt-preview-${index}`}
-              src={photo}
-              alt={`Receipt preview ${index + 1}`}
-              className="preview-image"
-            />
+              className="photo-preview-container"
+            >
+              <img
+                src={photo}
+                alt={`Receipt preview ${index + 1}`}
+                className="preview-image"
+              />
+              <button
+                type="button"
+                className="btn btn-danger btn-sm remove-photo-button"
+                onClick={() => {
+                  setReceiptPhoto((prev) => prev.filter((_, i) => i !== index));
+                }}
+              >
+                Remove
+              </button>
+            </div>
           ))}
       </div>
 
@@ -162,19 +176,32 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
         />
         {foodPhoto.length > 0 &&
           foodPhoto.map((photo, index) => (
-            <img
+            <div
               key={`food-preview-${index}`}
-              src={photo}
-              alt={`Food preview ${index + 1}`}
-              className="preview-image"
-            />
+              className="photo-preview-container"
+            >
+              <img
+                src={photo}
+                alt={`Food preview ${index + 1}`}
+                className="preview-image"
+              />
+              <button
+                type="button"
+                className="btn btn-danger btn-sm remove-photo-button"
+                onClick={() => {
+                  setFoodPhoto((prev) => prev.filter((_, i) => i !== index));
+                }}
+              >
+                Remove
+              </button>
+            </div>
           ))}
       </div>
 
       <div className="form-group">
-        <label>Date</label>
+        <label>Date and Time</label>
         <input
-          type="date"
+          type="datetime-local"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           required
