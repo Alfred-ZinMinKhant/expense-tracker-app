@@ -114,6 +114,7 @@ exports.handler = async (event, context) => {
           SET amount = ${updatedExpense.amount},
               category = ${updatedExpense.category},
               description = ${updatedExpense.description},
+              date = ${updatedExpense.date},
               receipt_photo = ${updatedExpense.receipt_photo || null},
               food_photo = ${updatedExpense.food_photo || null},
               user_id = ${updatedExpense.userId || null},
