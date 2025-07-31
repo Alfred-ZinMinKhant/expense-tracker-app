@@ -72,8 +72,9 @@ function App() {
         .filter(
           (expense) =>
             expense &&
-            typeof expense.amount === "number" &&
-            !isNaN(expense.amount)
+            expense.amount !== undefined &&
+            expense.amount !== null &&
+            !isNaN(Number(expense.amount))
         );
 
       setExpenses(localExpenses);
@@ -100,8 +101,9 @@ function App() {
           const validExpenses = parsedExpenses.filter(
             (expense: any) =>
               expense &&
-              typeof expense.amount === "number" &&
-              !isNaN(expense.amount)
+              expense.amount !== undefined &&
+              expense.amount !== null &&
+              !isNaN(Number(expense.amount))
           );
           setExpenses(validExpenses);
         } catch (error) {
