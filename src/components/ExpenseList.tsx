@@ -27,7 +27,7 @@ const ExpenseList: React.FC<ExpenseListProps> = ({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleString();
   };
 
   const formatAmount = (amount: number) => {

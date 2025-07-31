@@ -135,9 +135,7 @@ function App() {
     setShowEditModal(true);
   };
 
-  const handleUpdateExpense = async (
-    updatedExpense: Omit<Expense, "id" | "date">
-  ) => {
+  const handleUpdateExpense = async (updatedExpense: Omit<Expense, "id">) => {
     if (!editingExpense) return;
 
     const expenseToUpdate: Expense = {
@@ -284,7 +282,7 @@ function App() {
           <div className="modal">
             <h3>Edit Expense</h3>
             <ExpenseForm
-              onAddExpense={handleUpdateExpense}
+              onAddExpense={handleAddExpense}
               editingExpense={editingExpense}
               onUpdateExpense={handleUpdateExpense}
             />

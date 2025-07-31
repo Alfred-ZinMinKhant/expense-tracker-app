@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Expense } from "../types/Expense";
 import "./ExpenseForm.css";
 
+// Define separate types for add and update functions
+type AddExpenseData = Omit<Expense, "id" | "date">;
+type UpdateExpenseData = Omit<Expense, "id">;
+
 interface ExpenseFormProps {
-  onAddExpense: (expense: Omit<Expense, "id" | "date">) => void;
+  onAddExpense?: (expense: AddExpenseData) => void;
   editingExpense?: Expense | null;
-  onUpdateExpense?: (expense: Omit<Expense, "id" | "date">) => void;
+  onUpdateExpense?: (expense: UpdateExpenseData) => void;
 }
 
 const ExpenseForm: React.FC<ExpenseFormProps> = ({
@@ -73,8 +77,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({
     };
 
     if (editingExpense && onUpdateExpense) {
-      onUpdateExpense(expenseData);
-    } else {
+      // For updates, we need to include the date from the form
+      const updatedExpenseData = {
+        ...expenseData,
+        date: date, // Include the date from the form
+      };
+      onUpdateExpense(updatedExpenseData);
+    } else if (onAddExpense) {
       onAddExpense(expenseData);
     }
 
