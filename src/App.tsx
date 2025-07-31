@@ -215,10 +215,28 @@ function App() {
       // Update in cloud
       await CloudSyncManager.updateExpense(cloudExpense);
 
-      // Update local state
+      // Update local state with response from backend
+      const updatedCloudExpense = await CloudSyncManager.updateExpense(
+        cloudExpense
+      );
+
+      const updatedLocalExpense: Expense = {
+        id: updatedCloudExpense.id,
+        amount: updatedCloudExpense.amount,
+        category: updatedCloudExpense.category,
+        description: updatedCloudExpense.description,
+        date: updatedCloudExpense.date,
+        receiptPhoto: updatedCloudExpense.receipt_photo
+          ? updatedCloudExpense.receipt_photo.split("|")
+          : [],
+        foodPhoto: updatedCloudExpense.food_photo
+          ? updatedCloudExpense.food_photo.split("|")
+          : [],
+      };
+
       setExpenses((prev) =>
         prev.map((expense) =>
-          expense.id === editingExpense.id ? expenseToUpdate : expense
+          expense.id === editingExpense.id ? updatedLocalExpense : expense
         )
       );
 
