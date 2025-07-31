@@ -61,11 +61,11 @@ function App() {
         date: expense.date,
         receiptPhoto:
           typeof (expense as any).receipt_photo === "string"
-            ? (expense as any).receipt_photo.split(",")
+            ? (expense as any).receipt_photo.split("|")
             : [],
         foodPhoto:
           typeof (expense as any).food_photo === "string"
-            ? (expense as any).food_photo.split(",")
+            ? (expense as any).food_photo.split("|")
             : [],
       }));
 
@@ -110,9 +110,9 @@ function App() {
       description: expenseData.description,
       date: new Date().toISOString(),
       receipt_photo: expenseData.receiptPhoto
-        ? expenseData.receiptPhoto.join(",")
+        ? expenseData.receiptPhoto.join("|")
         : "",
-      food_photo: expenseData.foodPhoto ? expenseData.foodPhoto.join(",") : "",
+      food_photo: expenseData.foodPhoto ? expenseData.foodPhoto.join("|") : "",
     };
     try {
       const savedExpense = await CloudSyncManager.saveExpense(newExpense);
@@ -124,10 +124,10 @@ function App() {
         description: savedExpense.description,
         date: savedExpense.date,
         receiptPhoto: savedExpense.receipt_photo
-          ? savedExpense.receipt_photo.split(",")
+          ? savedExpense.receipt_photo.split("|")
           : [],
         foodPhoto: savedExpense.food_photo
-          ? savedExpense.food_photo.split(",")
+          ? savedExpense.food_photo.split("|")
           : [],
       };
       setExpenses((prev) => [...prev, localExpense]);
@@ -167,8 +167,8 @@ function App() {
         category: expenseToUpdate.category,
         description: expenseToUpdate.description,
         date: expenseToUpdate.date,
-        receipt_photo: expenseToUpdate.receiptPhoto?.join(",") || "",
-        food_photo: expenseToUpdate.foodPhoto?.join(",") || "",
+        receipt_photo: expenseToUpdate.receiptPhoto?.join("|") || "",
+        food_photo: expenseToUpdate.foodPhoto?.join("|") || "",
       };
 
       // Update in cloud
